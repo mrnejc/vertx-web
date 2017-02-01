@@ -101,6 +101,7 @@ public class HandlebarsTemplateEngineImpl extends CachingTemplateEngine<Template
   private class Loader implements TemplateLoader {
 
     private Vertx vertx;
+    private String templatePath = null;
 
     void setVertx(Vertx vertx) {
       this.vertx = vertx;
@@ -108,8 +109,14 @@ public class HandlebarsTemplateEngineImpl extends CachingTemplateEngine<Template
 
     @Override
     public TemplateSource sourceAt(String location) throws IOException {
+      // if called first time save the template path to reuse
+      if(templatePath == null)
+        templatePath = location.substring(0, location.lastIndexOf("/")+1);
 
-      String loc = adjustLocation(location);
+      // if location starts with templatePath its top-level template
+      // else call is from handlebars and its requesting a partial or
+      String loc = adjustLocation(location.startsWith(templatePath)?location:templatePath+location);
+
       String templ = Utils.readFileToString(vertx, loc);
 
       if (templ == null) {
